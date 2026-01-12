@@ -1,17 +1,16 @@
 namespace: node-mongo
 
-mongo-db:
-  defines: digitalocean-database/database
-  engine: mongodb
-  region: nyc3
-  size: db-s-1vcpu-1gb
-  num_nodes: 1
-  name: monk-node-mongo-prod
-  services:
-    database:
-      protocol: custom
+##
+# MongoDB Atlas (managed) + Node.js Express app
+#
+# Notes:
+# - `mongodb-atlas/user` will write a generated password into `password_secret_ref`
+#   if the secret doesn't exist yet. Therefore we do NOT list ${env}-mongodb-password
+#   in MANIFEST SECRET (it's internal).
+# - `allow_ips: ["0.0.0.0/0"]` is open to the world (demo-friendly, not production-safe).
+##
 
-app:
+app-base:
   defines: runnable
   containers:
     main:
@@ -22,63 +21,337 @@ app:
       port: 3000
       protocol: tcp
       ingress-routes:
-        root:
+        app:
           path-prefix: /
-  connections:
-    mongo:
-      target: node-mongo/mongo-db
-      service: database
-  depends:
-    wait-for:
-      runnables:
-        - node-mongo/mongo-db
-      timeout: 600
-  scale:
-    value: 2
-  checks:
-    readiness:
-      code: |
-        "http://localhost:3000/api/health" do-http-get error? not
-      period: 10
-      initialDelay: 10
   variables:
-    mongodb-uri:
-      type: string
-      value: <- connection-target("mongo") entity-state get-member("connection_uri")
-      env: MONGODB_URI
-    node-env:
-      type: string
-      value: production
-      env: NODE_ENV
     port:
       type: int
       value: 3000
       env: PORT
+    mongodb-uri:
+      type: string
+      # Full Atlas connection string (mongodb+srv://...), provided by the Atlas cluster entity.
+      value: <- connection-target("mongo-cluster") entity-state get-member("connection_srv")
+      env: MONGODB_URI
+    mongodb-username:
+      type: string
+      value: <- connection-target("mongo-user") entity-state get-member("name")
+      env: MONGODB_USERNAME
+    mongodb-password:
+      type: string
+      # overridden by env-specific runnable to use the correct secret name
+      value: "CHANGE-ME"
+      env: MONGODB_PASSWORD
 
-prod:
-  defines: group
-  members:
-    - node-mongo/mongo-db
-    - node-mongo/app
+app-dev:
+  defines: runnable
+  inherits: node-mongo/app-base
+  scale:
+    value: 1
+  connections:
+    mongo-cluster:
+      target: node-mongo/dev-atlas-cluster
+      service: data
+    mongo-user:
+      target: node-mongo/dev-atlas-user
+      service: data
+  depends:
+    wait-for:
+      runnables:
+        - node-mongo/dev-atlas-cluster
+        - node-mongo/dev-atlas-user
+      timeout: 600
+  variables:
+    node-env:
+      type: string
+      value: dev
+      env: NODE_ENV
+    mongodb-password:
+      type: string
+      value: <- secret("dev-mongodb-password")
+      env: MONGODB_PASSWORD
+  permitted-secrets:
+    dev-mongodb-password: true
+
+app-staging:
+  defines: runnable
+  inherits: node-mongo/app-base
+  scale:
+    value: 1
+  connections:
+    mongo-cluster:
+      target: node-mongo/staging-atlas-cluster
+      service: data
+    mongo-user:
+      target: node-mongo/staging-atlas-user
+      service: data
+  depends:
+    wait-for:
+      runnables:
+        - node-mongo/staging-atlas-cluster
+        - node-mongo/staging-atlas-user
+      timeout: 600
+  variables:
+    node-env:
+      type: string
+      value: staging
+      env: NODE_ENV
+    mongodb-password:
+      type: string
+      value: <- secret("staging-mongodb-password")
+      env: MONGODB_PASSWORD
+  permitted-secrets:
+    staging-mongodb-password: true
+
+app-prod:
+  defines: runnable
+  inherits: node-mongo/app-base
+  scale:
+    value: 2
+  connections:
+    mongo-cluster:
+      target: node-mongo/prod-atlas-cluster
+      service: data
+    mongo-user:
+      target: node-mongo/prod-atlas-user
+      service: data
+  depends:
+    wait-for:
+      runnables:
+        - node-mongo/prod-atlas-cluster
+        - node-mongo/prod-atlas-user
+      timeout: 600
+  variables:
+    node-env:
+      type: string
+      value: production
+      env: NODE_ENV
+    mongodb-password:
+      type: string
+      value: <- secret("prod-mongodb-password")
+      env: MONGODB_PASSWORD
+  permitted-secrets:
+    prod-mongodb-password: true
+
+##
+# MongoDB Atlas - DEV
+##
+
+dev-atlas-project:
+  defines: mongodb-atlas/project
+  name: monk-node-mongo-dev-project
+  organization: <- secret("default-mongodb-org")
+  secret_ref: default-mongodb-token
+  services:
+    data:
+      protocol: custom
+  permitted-secrets:
+    default-mongodb-token: true
+    default-mongodb-org: true
+
+dev-atlas-user:
+  defines: mongodb-atlas/user
+  name: monk-node-mongo-dev-user
+  role: readWriteAnyDatabase
+  project_id: <- connection-target("project") entity-state get-member("id")
+  secret_ref: default-mongodb-token
+  password_secret_ref: dev-mongodb-password
+  services:
+    data:
+      protocol: custom
+  connections:
+    project:
+      target: node-mongo/dev-atlas-project
+      service: data
+  depends:
+    wait-for:
+      runnables:
+        - node-mongo/dev-atlas-project
+      timeout: 300
+  permitted-secrets:
+    default-mongodb-token: true
+    dev-mongodb-password: true
+
+dev-atlas-cluster:
+  defines: mongodb-atlas/cluster
+  name: monk-node-mongo-dev-cluster
+  provider: AWS
+  region: US_EAST_1
+  instance_size: M0
+  # Demo-friendly; for production, restrict to trusted IPs/CIDRs.
+  allow_ips:
+    - "0.0.0.0/0"
+  project_id: <- connection-target("project") entity-state get-member("id")
+  secret_ref: default-mongodb-token
+  services:
+    data:
+      protocol: custom
+  connections:
+    project:
+      target: node-mongo/dev-atlas-project
+      service: data
+  depends:
+    wait-for:
+      runnables:
+        - node-mongo/dev-atlas-project
+      timeout: 600
+  permitted-secrets:
+    default-mongodb-token: true
+
+##
+# MongoDB Atlas - STAGING
+##
+
+staging-atlas-project:
+  defines: mongodb-atlas/project
+  name: monk-node-mongo-staging-project
+  organization: <- secret("default-mongodb-org")
+  secret_ref: default-mongodb-token
+  services:
+    data:
+      protocol: custom
+  permitted-secrets:
+    default-mongodb-token: true
+    default-mongodb-org: true
+
+staging-atlas-user:
+  defines: mongodb-atlas/user
+  name: monk-node-mongo-staging-user
+  role: readWriteAnyDatabase
+  project_id: <- connection-target("project") entity-state get-member("id")
+  secret_ref: default-mongodb-token
+  password_secret_ref: staging-mongodb-password
+  services:
+    data:
+      protocol: custom
+  connections:
+    project:
+      target: node-mongo/staging-atlas-project
+      service: data
+  depends:
+    wait-for:
+      runnables:
+        - node-mongo/staging-atlas-project
+      timeout: 300
+  permitted-secrets:
+    default-mongodb-token: true
+    staging-mongodb-password: true
+
+staging-atlas-cluster:
+  defines: mongodb-atlas/cluster
+  name: monk-node-mongo-staging-cluster
+  provider: AWS
+  region: US_EAST_1
+  instance_size: M0
+  # Demo-friendly; for production, restrict to trusted IPs/CIDRs.
+  allow_ips:
+    - "0.0.0.0/0"
+  project_id: <- connection-target("project") entity-state get-member("id")
+  secret_ref: default-mongodb-token
+  services:
+    data:
+      protocol: custom
+  connections:
+    project:
+      target: node-mongo/staging-atlas-project
+      service: data
+  depends:
+    wait-for:
+      runnables:
+        - node-mongo/staging-atlas-project
+      timeout: 600
+  permitted-secrets:
+    default-mongodb-token: true
+
+##
+# MongoDB Atlas - PROD
+##
+
+prod-atlas-project:
+  defines: mongodb-atlas/project
+  name: monk-node-mongo-prod-project
+  organization: <- secret("default-mongodb-org")
+  secret_ref: default-mongodb-token
+  services:
+    data:
+      protocol: custom
+  permitted-secrets:
+    default-mongodb-token: true
+    default-mongodb-org: true
+
+prod-atlas-user:
+  defines: mongodb-atlas/user
+  name: monk-node-mongo-prod-user
+  role: readWriteAnyDatabase
+  project_id: <- connection-target("project") entity-state get-member("id")
+  secret_ref: default-mongodb-token
+  password_secret_ref: prod-mongodb-password
+  services:
+    data:
+      protocol: custom
+  connections:
+    project:
+      target: node-mongo/prod-atlas-project
+      service: data
+  depends:
+    wait-for:
+      runnables:
+        - node-mongo/prod-atlas-project
+      timeout: 300
+  permitted-secrets:
+    default-mongodb-token: true
+    prod-mongodb-password: true
+
+prod-atlas-cluster:
+  defines: mongodb-atlas/cluster
+  name: monk-node-mongo-prod-cluster
+  provider: AWS
+  region: US_EAST_1
+  instance_size: M0
+  # Demo-friendly; for production, restrict to trusted IPs/CIDRs.
+  allow_ips:
+    - "0.0.0.0/0"
+  project_id: <- connection-target("project") entity-state get-member("id")
+  secret_ref: default-mongodb-token
+  services:
+    data:
+      protocol: custom
+  connections:
+    project:
+      target: node-mongo/prod-atlas-project
+      service: data
+  depends:
+    wait-for:
+      runnables:
+        - node-mongo/prod-atlas-project
+      timeout: 600
+  permitted-secrets:
+    default-mongodb-token: true
+
+##
+# Environment groups
+##
 
 dev:
   defines: group
   members:
-    - node-mongo/mongo-db
-    - node-mongo/app
-  variables:
-    environment:
-      type: string
-      value: dev
-      env: ENVIRONMENT
+    - node-mongo/dev-atlas-project
+    - node-mongo/dev-atlas-cluster
+    - node-mongo/dev-atlas-user
+    - node-mongo/app-dev
 
 staging:
   defines: group
   members:
-    - node-mongo/mongo-db
-    - node-mongo/app
-  variables:
-    environment:
-      type: string
-      value: staging
-      env: ENVIRONMENT
+    - node-mongo/staging-atlas-project
+    - node-mongo/staging-atlas-cluster
+    - node-mongo/staging-atlas-user
+    - node-mongo/app-staging
+
+prod:
+  defines: group
+  members:
+    - node-mongo/prod-atlas-project
+    - node-mongo/prod-atlas-cluster
+    - node-mongo/prod-atlas-user
+    - node-mongo/app-prod
