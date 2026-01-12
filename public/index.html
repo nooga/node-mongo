@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Node.js MongoDB Demo</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        padding: 20px;
+      }
+
+      .container {
+        max-width: 800px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+      }
+
+      .header {
+        background: linear-gradient(45deg, #1e3c72, #2a5298);
+        color: white;
+        padding: 30px;
+        text-align: center;
+      }
+
+      .header h1 {
+        font-size: 2.5rem;
+        margin-bottom: 10px;
+      }
+
+      .status {
+        padding: 20px;
+        margin: 20px;
+        border-radius: 10px;
+        font-weight: bold;
+        text-align: center;
+      }
+
+      .status.connected {
+        background: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+      }
+
+      .status.disconnected {
+        background: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+      }
+
+      .form-section {
+        padding: 30px;
+        border-bottom: 1px solid #eee;
+      }
+
+      .form-section h2 {
+        color: #333;
+        margin-bottom: 20px;
+        font-size: 1.5rem;
+      }
+
+      .form-group {
+        margin-bottom: 20px;
+      }
+
+      .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        color: #555;
+        font-weight: 500;
+      }
+
+      .form-group input {
+        width: 100%;
+        padding: 12px;
+        border: 2px solid #ddd;
+        border-radius: 8px;
+        font-size: 16px;
+        transition: border-color 0.3s;
+      }
+
+      .form-group input:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+      }
+
+      .btn {
+        background: linear-gradient(45deg, #667eea, #764ba2);
+        color: white;
+        border: none;
+        padding: 12px 30px;
+        border-radius: 8px;
+        font-size: 16px;
+        cursor: pointer;
+        transition: transform 0.2s;
+      }
+
+      .btn:hover {
+        transform: translateY(-2px);
+      }
+
+      .btn:active {
+        transform: translateY(0);
+      }
+
+      .users-section {
+        padding: 30px;
+      }
+
+      .user-card {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 15px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: transform 0.2s;
+      }
+
+      .user-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+      }
+
+      .user-info h3 {
+        color: #333;
+        margin-bottom: 5px;
+      }
+
+      .user-info p {
+        color: #666;
+        font-size: 14px;
+      }
+
+      .delete-btn {
+        background: #dc3545;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+      }
+
+      .delete-btn:hover {
+        background: #c82333;
+      }
+
+      .loading {
+        text-align: center;
+        padding: 20px;
+        color: #666;
+      }
+
+      .error {
+        background: #f8d7da;
+        color: #721c24;
+        padding: 15px;
+        border-radius: 5px;
+        margin: 20px;
+        border: 1px solid #f5c6cb;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .fade-in {
+        animation: fadeIn 0.3s ease-out;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>🚀 Node.js MongoDB Demo</h1>
+        <p>Modern web application with database integration</p>
+      </div>
+
+      <div id="status" class="status">
+        <div class="loading">Checking database connection...</div>
+      </div>
+
+      <div class="form-section">
+        <h2>Add New User</h2>
+        <form id="userForm">
+          <div class="form-group">
+            <label for="name">Full Name</label>
+            <input type="text" id="name" name="name" required />
+          </div>
+          <div class="form-group">
+            <label for="email">Email Address</label>
+            <input type="email" id="email" name="email" required />
+          </div>
+          <button type="submit" class="btn">Add User</button>
+        </form>
+      </div>
+
+      <div class="users-section">
+        <h2>Users in Database</h2>
+        <div id="usersList">
+          <div class="loading">Loading users...</div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      class App {
+        constructor() {
+          this.statusEl = document.getElementById("status");
+          this.usersListEl = document.getElementById("usersList");
+          this.userForm = document.getElementById("userForm");
+
+          this.init();
+        }
+
+        async init() {
+          await this.checkHealth();
+          await this.loadUsers();
+          this.setupEventListeners();
+        }
+
+        setupEventListeners() {
+          this.userForm.addEventListener("submit", (e) =>
+            this.handleAddUser(e)
+          );
+        }
+
+        async checkHealth() {
+          try {
+            const response = await fetch("/api/health");
+            const data = await response.json();
+
+            if (data.database === "connected") {
+              this.statusEl.innerHTML = `
+                            <div class="connected">
+                                ✅ Database Connected - ${data.timestamp}
+                            </div>
+                        `;
+              this.statusEl.className = "status connected";
+            } else {
+              this.statusEl.innerHTML = `
+                            <div class="disconnected">
+                                ❌ Database Disconnected
+                            </div>
+                        `;
+              this.statusEl.className = "status disconnected";
+            }
+          } catch (error) {
+            this.statusEl.innerHTML = `
+                        <div class="disconnected">
+                            ❌ Connection Error: ${error.message}
+                        </div>
+                    `;
+            this.statusEl.className = "status disconnected";
+          }
+        }
+
+        async loadUsers() {
+          try {
+            const response = await fetch("/api/users");
+            const users = await response.json();
+
+            if (users.length === 0) {
+              this.usersListEl.innerHTML =
+                '<p class="loading">No users found. Add some users to get started!</p>';
+              return;
+            }
+
+            this.usersListEl.innerHTML = users
+              .map(
+                (user) => `
+                        <div class="user-card fade-in">
+                            <div class="user-info">
+                                <h3>${this.escapeHtml(user.name)}</h3>
+                                <p>${this.escapeHtml(user.email)}</p>
+                                <p><small>Added: ${new Date(
+                                  user.createdAt
+                                ).toLocaleString()}</small></p>
+                            </div>
+                            <button class="delete-btn" onclick="app.deleteUser('${
+                              user._id
+                            }')">
+                                Delete
+                            </button>
+                        </div>
+                    `
+              )
+              .join("");
+          } catch (error) {
+            this.usersListEl.innerHTML = `<div class="error">Error loading users: ${error.message}</div>`;
+          }
+        }
+
+        async handleAddUser(e) {
+          e.preventDefault();
+
+          const formData = new FormData(e.target);
+          const userData = {
+            name: formData.get("name"),
+            email: formData.get("email"),
+          };
+
+          try {
+            const response = await fetch("/api/users", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(userData),
+            });
+
+            if (response.ok) {
+              e.target.reset();
+              await this.loadUsers();
+              await this.checkHealth();
+            } else {
+              const error = await response.json();
+              alert(`Error: ${error.error}`);
+            }
+          } catch (error) {
+            alert(`Error: ${error.message}`);
+          }
+        }
+
+        async deleteUser(userId) {
+          if (!confirm("Are you sure you want to delete this user?")) return;
+
+          try {
+            const response = await fetch(`/api/users/${userId}`, {
+              method: "DELETE",
+            });
+
+            if (response.ok) {
+              await this.loadUsers();
+            } else {
+              const error = await response.json();
+              alert(`Error: ${error.error}`);
+            }
+          } catch (error) {
+            alert(`Error: ${error.message}`);
+          }
+        }
+
+        escapeHtml(text) {
+          const div = document.createElement("div");
+          div.textContent = text;
+          return div.innerHTML;
+        }
+      }
+
+      // Initialize the app
+      const app = new App();
+    </script>
+  </body>
+</html>

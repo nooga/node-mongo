@@ -1,0 +1,84 @@
+namespace: node-mongo
+
+mongo-db:
+  defines: digitalocean-database/database
+  engine: mongodb
+  region: nyc3
+  size: db-s-1vcpu-1gb
+  num_nodes: 1
+  name: monk-node-mongo-prod
+  services:
+    database:
+      protocol: custom
+
+app:
+  defines: runnable
+  containers:
+    main:
+      image: app:latest
+  services:
+    http:
+      container: main
+      port: 3000
+      protocol: tcp
+      ingress-routes:
+        root:
+          path-prefix: /
+  connections:
+    mongo:
+      target: node-mongo/mongo-db
+      service: database
+  depends:
+    wait-for:
+      runnables:
+        - node-mongo/mongo-db
+      timeout: 600
+  scale:
+    value: 2
+  checks:
+    readiness:
+      code: |
+        "http://localhost:3000/api/health" do-http-get error? not
+      period: 10
+      initialDelay: 10
+  variables:
+    mongodb-uri:
+      type: string
+      value: <- connection-target("mongo") entity-state get-member("connection_uri")
+      env: MONGODB_URI
+    node-env:
+      type: string
+      value: production
+      env: NODE_ENV
+    port:
+      type: int
+      value: 3000
+      env: PORT
+
+prod:
+  defines: group
+  members:
+    - node-mongo/mongo-db
+    - node-mongo/app
+
+dev:
+  defines: group
+  members:
+    - node-mongo/mongo-db
+    - node-mongo/app
+  variables:
+    environment:
+      type: string
+      value: dev
+      env: ENVIRONMENT
+
+staging:
+  defines: group
+  members:
+    - node-mongo/mongo-db
+    - node-mongo/app
+  variables:
+    environment:
+      type: string
+      value: staging
+      env: ENVIRONMENT

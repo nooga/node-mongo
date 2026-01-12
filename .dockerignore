@@ -1,0 +1,26 @@
+.git
+.gitignore
+node_modules
+npm-debug.log*
+pnpm-debug.log*
+
+# dotenv / local env files
+.env
+.env.*
+
+# OS / editor
+.DS_Store
+.idea
+.vscode
+
+# build outputs / caches (not expected here, but safe)
+dist
+build
+coverage
+tmp
+*.tmp
+
+# language caches
+__pycache__
+*.pyc
+.venv

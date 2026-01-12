@@ -1,0 +1,38 @@
+{
+    "name": "node-mongo-app",
+    "version": "1.0.0",
+    "description": "A modern Node.js application with MongoDB integration",
+    "main": "src/server.js",
+    "scripts": {
+        "start": "node src/server.js",
+        "dev": "nodemon src/server.js",
+        "build": "podman build -t node-mongo-app .",
+        "up": "podman-compose up -d",
+        "down": "podman-compose down",
+        "logs": "podman-compose logs -f",
+        "env:check": "node -e \"console.log('MONGODB_URI:', process.env.MONGODB_URI || 'Not set'); console.log('Has Auth:', !!(process.env.MONGODB_USERNAME && process.env.MONGODB_PASSWORD));\""
+    },
+    "keywords": [
+        "nodejs",
+        "mongodb",
+        "express",
+        "podman"
+    ],
+    "author": "",
+    "license": "MIT",
+    "dependencies": {
+        "express": "^4.18.2",
+        "mongoose": "^8.0.3",
+        "cors": "^2.8.5",
+        "dotenv": "^16.3.1",
+        "helmet": "^7.1.0",
+        "compression": "^1.7.4"
+    },
+    "devDependencies": {
+        "nodemon": "^3.0.2"
+    },
+    "engines": {
+        "node": ">=18.0.0"
+    },
+    "packageManager": "pnpm@8.10.0"
+}
