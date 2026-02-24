@@ -4,7 +4,45 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Node.js MongoDB Demo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
     <style>
+      :root {
+        --blue-50: #eff6ff;
+        --blue-100: #dbeafe;
+        --blue-200: #bfdbfe;
+        --blue-300: #93c5fd;
+        --blue-400: #60a5fa;
+        --blue-500: #3b82f6;
+        --blue-600: #2563eb;
+        --blue-700: #1d4ed8;
+        --blue-800: #1e40af;
+        --blue-900: #1e3a5f;
+        --blue-950: #0f172a;
+        --slate-50: #f8fafc;
+        --slate-100: #f1f5f9;
+        --slate-200: #e2e8f0;
+        --slate-300: #cbd5e1;
+        --slate-400: #94a3b8;
+        --slate-500: #64748b;
+        --slate-600: #475569;
+        --slate-700: #334155;
+        --red-500: #ef4444;
+        --red-600: #dc2626;
+        --green-50: #f0fdf4;
+        --green-600: #16a34a;
+        --green-700: #15803d;
+        --radius: 14px;
+        --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.06);
+        --shadow-md: 0 4px 16px rgba(15, 23, 42, 0.08);
+        --shadow-lg: 0 12px 40px rgba(15, 23, 42, 0.12);
+        --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
       * {
         margin: 0;
         padding: 0;
@@ -12,173 +50,247 @@
       }
 
       body {
-        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        font-family: "Inter", system-ui, -apple-system, sans-serif;
+        background: var(--blue-950);
         min-height: 100vh;
-        padding: 20px;
+        padding: 24px;
+        color: var(--slate-700);
+        -webkit-font-smoothing: antialiased;
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background:
+          radial-gradient(ellipse at 20% 0%, rgba(59, 130, 246, 0.25) 0%, transparent 60%),
+          radial-gradient(ellipse at 80% 100%, rgba(37, 99, 235, 0.15) 0%, transparent 50%);
+        pointer-events: none;
+        z-index: 0;
       }
 
       .container {
-        max-width: 800px;
+        position: relative;
+        z-index: 1;
+        max-width: 720px;
         margin: 0 auto;
-        background: white;
-        border-radius: 20px;
-        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(20px);
+        border-radius: 24px;
+        box-shadow:
+          0 0 0 1px rgba(255, 255, 255, 0.1),
+          var(--shadow-lg);
         overflow: hidden;
       }
 
       .header {
-        background: linear-gradient(45deg, #1e3c72, #2a5298);
+        background: linear-gradient(135deg, var(--blue-600), var(--blue-800));
         color: white;
-        padding: 30px;
+        padding: 40px 32px 36px;
         text-align: center;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .header::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(circle at 70% 20%, rgba(255, 255, 255, 0.12) 0%, transparent 50%);
+        pointer-events: none;
       }
 
       .header h1 {
-        font-size: 2.5rem;
-        margin-bottom: 10px;
+        font-size: 1.75rem;
+        font-weight: 700;
+        letter-spacing: -0.025em;
+        margin-bottom: 6px;
+      }
+
+      .header p {
+        font-size: 0.9rem;
+        opacity: 0.8;
+        font-weight: 400;
       }
 
       .status {
-        padding: 20px;
-        margin: 20px;
-        border-radius: 10px;
-        font-weight: bold;
+        margin: 20px 24px;
+        padding: 14px 20px;
+        border-radius: var(--radius);
+        font-weight: 600;
+        font-size: 0.85rem;
         text-align: center;
+        transition: all var(--transition);
       }
 
       .status.connected {
-        background: #d4edda;
-        color: #155724;
-        border: 1px solid #c3e6cb;
+        background: var(--green-50);
+        color: var(--green-700);
+        border: 1px solid rgba(22, 163, 74, 0.2);
       }
 
       .status.disconnected {
-        background: #f8d7da;
-        color: #721c24;
-        border: 1px solid #f5c6cb;
+        background: #fef2f2;
+        color: var(--red-600);
+        border: 1px solid rgba(239, 68, 68, 0.2);
       }
 
       .form-section {
-        padding: 30px;
-        border-bottom: 1px solid #eee;
+        padding: 28px 24px;
+        border-bottom: 1px solid var(--slate-200);
       }
 
-      .form-section h2 {
-        color: #333;
+      .form-section h2,
+      .users-section h2 {
+        color: var(--slate-700);
         margin-bottom: 20px;
-        font-size: 1.5rem;
+        font-size: 1.1rem;
+        font-weight: 600;
+        letter-spacing: -0.01em;
       }
 
       .form-group {
-        margin-bottom: 20px;
+        margin-bottom: 16px;
       }
 
       .form-group label {
         display: block;
-        margin-bottom: 8px;
-        color: #555;
+        margin-bottom: 6px;
+        color: var(--slate-500);
         font-weight: 500;
+        font-size: 0.85rem;
       }
 
       .form-group input {
         width: 100%;
-        padding: 12px;
-        border: 2px solid #ddd;
-        border-radius: 8px;
-        font-size: 16px;
-        transition: border-color 0.3s;
+        padding: 10px 14px;
+        border: 1.5px solid var(--slate-200);
+        border-radius: 10px;
+        font-size: 0.95rem;
+        font-family: inherit;
+        color: var(--slate-700);
+        background: var(--slate-50);
+        transition: all var(--transition);
+      }
+
+      .form-group input::placeholder {
+        color: var(--slate-400);
       }
 
       .form-group input:focus {
         outline: none;
-        border-color: #667eea;
-        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        border-color: var(--blue-500);
+        background: white;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
       }
 
       .btn {
-        background: linear-gradient(45deg, #667eea, #764ba2);
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: var(--blue-600);
         color: white;
         border: none;
-        padding: 12px 30px;
-        border-radius: 8px;
-        font-size: 16px;
+        padding: 10px 24px;
+        border-radius: 10px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        font-family: inherit;
         cursor: pointer;
-        transition: transform 0.2s;
+        transition: all var(--transition);
+        box-shadow: 0 1px 3px rgba(37, 99, 235, 0.3);
       }
 
       .btn:hover {
-        transform: translateY(-2px);
+        background: var(--blue-700);
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
+        transform: translateY(-1px);
       }
 
       .btn:active {
         transform: translateY(0);
+        box-shadow: 0 1px 3px rgba(37, 99, 235, 0.3);
       }
 
       .users-section {
-        padding: 30px;
+        padding: 28px 24px;
       }
 
       .user-card {
-        background: #f8f9fa;
-        border: 1px solid #dee2e6;
-        border-radius: 10px;
-        padding: 20px;
-        margin-bottom: 15px;
+        background: var(--slate-50);
+        border: 1px solid var(--slate-200);
+        border-radius: var(--radius);
+        padding: 16px 20px;
+        margin-bottom: 10px;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        transition: transform 0.2s;
+        transition: all var(--transition);
       }
 
       .user-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        background: white;
+        border-color: var(--blue-200);
+        box-shadow: var(--shadow-md);
+        transform: translateY(-1px);
       }
 
       .user-info h3 {
-        color: #333;
-        margin-bottom: 5px;
+        color: var(--slate-700);
+        font-size: 0.95rem;
+        font-weight: 600;
+        margin-bottom: 2px;
       }
 
       .user-info p {
-        color: #666;
-        font-size: 14px;
+        color: var(--slate-500);
+        font-size: 0.825rem;
+      }
+
+      .user-info small {
+        color: var(--slate-400);
       }
 
       .delete-btn {
-        background: #dc3545;
-        color: white;
-        border: none;
-        padding: 8px 16px;
-        border-radius: 5px;
+        background: transparent;
+        color: var(--slate-400);
+        border: 1.5px solid var(--slate-200);
+        padding: 6px 14px;
+        border-radius: 8px;
         cursor: pointer;
-        font-size: 14px;
+        font-size: 0.8rem;
+        font-weight: 500;
+        font-family: inherit;
+        transition: all var(--transition);
       }
 
       .delete-btn:hover {
-        background: #c82333;
+        background: #fef2f2;
+        color: var(--red-600);
+        border-color: rgba(239, 68, 68, 0.3);
       }
 
       .loading {
         text-align: center;
-        padding: 20px;
-        color: #666;
+        padding: 24px;
+        color: var(--slate-400);
+        font-size: 0.9rem;
       }
 
       .error {
-        background: #f8d7da;
-        color: #721c24;
-        padding: 15px;
-        border-radius: 5px;
-        margin: 20px;
-        border: 1px solid #f5c6cb;
+        background: #fef2f2;
+        color: var(--red-600);
+        padding: 14px 20px;
+        border-radius: var(--radius);
+        margin: 20px 24px;
+        border: 1px solid rgba(239, 68, 68, 0.2);
+        font-size: 0.9rem;
       }
 
       @keyframes fadeIn {
         from {
           opacity: 0;
-          transform: translateY(20px);
+          transform: translateY(8px);
         }
         to {
           opacity: 1;
@@ -187,15 +299,25 @@
       }
 
       .fade-in {
-        animation: fadeIn 0.3s ease-out;
+        animation: fadeIn 0.25s ease-out;
+      }
+
+      @media (max-width: 600px) {
+        body { padding: 12px; }
+        .header { padding: 28px 20px 24px; }
+        .header h1 { font-size: 1.4rem; }
+        .form-section, .users-section { padding: 20px 16px; }
+        .status { margin: 16px; }
+        .user-card { flex-direction: column; align-items: flex-start; gap: 12px; }
+        .delete-btn { align-self: flex-end; }
       }
     </style>
   </head>
   <body>
     <div class="container">
       <div class="header">
-        <h1>🚀 Node.js MongoDB Demo</h1>
-        <p>Modern web application with database integration</p>
+        <h1>Node + Mongo</h1>
+        <p>User management with database integration</p>
       </div>
 
       <div id="status" class="status">
@@ -207,13 +329,16 @@
         <form id="userForm">
           <div class="form-group">
             <label for="name">Full Name</label>
-            <input type="text" id="name" name="name" required />
+            <input type="text" id="name" name="name" placeholder="Jane Doe" required />
           </div>
           <div class="form-group">
             <label for="email">Email Address</label>
-            <input type="email" id="email" name="email" required />
+            <input type="email" id="email" name="email" placeholder="jane@example.com" required />
           </div>
-          <button type="submit" class="btn">Add User</button>
+          <button type="submit" class="btn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add User
+          </button>
         </form>
       </div>
 
@@ -253,26 +378,14 @@
             const data = await response.json();
 
             if (data.database === "connected") {
-              this.statusEl.innerHTML = `
-                            <div class="connected">
-                                ✅ Database Connected - ${data.timestamp}
-                            </div>
-                        `;
+              this.statusEl.innerHTML = `Database connected`;
               this.statusEl.className = "status connected";
             } else {
-              this.statusEl.innerHTML = `
-                            <div class="disconnected">
-                                ❌ Database Disconnected
-                            </div>
-                        `;
+              this.statusEl.innerHTML = `Database disconnected`;
               this.statusEl.className = "status disconnected";
             }
           } catch (error) {
-            this.statusEl.innerHTML = `
-                        <div class="disconnected">
-                            ❌ Connection Error: ${error.message}
-                        </div>
-                    `;
+            this.statusEl.innerHTML = `Connection error: ${error.message}`;
             this.statusEl.className = "status disconnected";
           }
         }
