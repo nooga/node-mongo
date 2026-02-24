@@ -6,7 +6,7 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
-printf "${GREEN}Monk Dynamic Environments - Deploy Script${NC}\n"
+printf "${GREEN}Monk Capsules - Deploy${NC}\n"
 
 # Validate required env vars
 # MONKCODE and MONK_SERVICE_TOKEN are set by the workflow job before invoking this script

@@ -1,10 +1,10 @@
-name: Monk - Branch Dynamic Environments
+name: Monk Capsules
 
 'on':
   push:
-    branches-ignore: [ "main", "master", "self-hosted" ]
+    branches-ignore: [ "main", "master" ]
   pull_request:
-    branches: [ "main", "master", "self-hosted" ]
+    branches: [ "main", "master" ]
     types: [closed]
   workflow_dispatch:
     inputs:
@@ -24,9 +24,10 @@ name: Monk - Branch Dynamic Environments
 permissions:
   contents: read
   pull-requests: write
+  deployments: write
 
 concurrency:
-  group: monk-dynenv-${{ github.ref || github.event.pull_request.head.ref || github.run_id }}
+  group: monk-capsule-${{ github.ref || github.event.pull_request.head.ref || github.run_id }}
   cancel-in-progress: true
 
 jobs:
@@ -90,7 +91,7 @@ jobs:
     needs: resolve-context
     if: ${{ needs.resolve-context.outputs.should_run == 'true' && needs.resolve-context.outputs.action == 'provision_deploy' }}
     runs-on: ubuntu-latest
-    environment: monk-dynamic-envs
+    environment: monk-capsules
     container:
       image: monkreleases.azurecr.io/monk-ci:latest
     steps:
@@ -104,7 +105,7 @@ jobs:
         run: |
           chmod +x scripts/dynenv-provision.sh
           chmod +x scripts/parse-manifest.sh
-      - name: Provision branch cluster
+      - name: Provision Monk Capsule
         run: ./scripts/dynenv-provision.sh
         env:
           CLUSTER_NAME: ${{ needs.resolve-context.outputs.cluster_name }}
@@ -124,10 +125,10 @@ jobs:
         if: ${{ success() }}
         run: |
           BRANCH="${{ needs.resolve-context.outputs.branch_name }}"
-          BASE="self-hosted"
+          BASE="main"
           REPO="${{ github.repository }}"
-          PR_TITLE="[dynenv] $BRANCH"
-          PR_BODY="Auto-created by Monk dynamic environments.\n\nClosing this PR will destroy the branch cluster."
+          PR_TITLE="[capsule] $BRANCH"
+          PR_BODY="Auto-created by Monk Capsules.\n\nClosing this PR will destroy the Capsule."
           EXISTING=$(curl -s -H "Authorization: token ${{ github.token }}" \
             "https://api.github.com/repos/$REPO/pulls?head=${{ github.repository_owner }}:$BRANCH&base=$BASE&state=open" \
             | jq length)
@@ -152,11 +153,12 @@ jobs:
     needs: [resolve-context, provision]
     if: ${{ always() && needs.resolve-context.outputs.should_run == 'true' && needs.resolve-context.outputs.action != 'destroy' && (needs.provision.result == 'success' || needs.provision.result == 'skipped') }}
     runs-on: ubuntu-latest
-    environment: monk-dynamic-envs
+    environment: monk-capsules
     container:
       image: monkreleases.azurecr.io/monk-ci:latest
     outputs:
       monkcode: ${{ steps.meta.outputs.monkcode }}
+      monk_cli_token: ${{ steps.meta.outputs.monk_cli_token }}
       registry_address: ${{ steps.meta.outputs.registry_address }}
       registry_username: ${{ steps.meta.outputs.registry_username }}
       registry_password: ${{ steps.meta.outputs.registry_password }}
@@ -191,6 +193,8 @@ jobs:
           echo "Monkcode retrieved successfully"
           echo "::add-mask::$MONKCODE"
           echo "monkcode=$(echo -n "$MONKCODE" | base64 -w0 | base64 -w0)" >> "$GITHUB_OUTPUT"
+          echo "::add-mask::$MONK_CLI_TOKEN"
+          echo "monk_cli_token=$(echo -n "$MONK_CLI_TOKEN" | base64 -w0 | base64 -w0)" >> "$GITHUB_OUTPUT"
 
           # Step 2: Retrieve registry credentials from cluster secrets via monk CLI
           export MONK_SERVICE_TOKEN="$MONK_CLI_TOKEN"
@@ -217,18 +221,6 @@ jobs:
           echo "registry_address=$REGISTRY_ADDRESS" >> "$GITHUB_OUTPUT"
           echo "registry_username=$REGISTRY_USERNAME" >> "$GITHUB_OUTPUT"
           echo "registry_password=$(echo -n "$REGISTRY_PASSWORD" | base64 -w0 | base64 -w0)" >> "$GITHUB_OUTPUT"
-
-
-          # check monk registry and nginx status and logs
-          # check monk ps 
-          echo "Checking monk ps..."
-          monk ps -a -s
-          # check monk registry logs
-          echo "Checking monk registry logs..."
-          monk logs -s system/registry
-          # check monk nginx logs
-          echo "Checking monk nginx logs..."
-          monk logs -s system/nginx
         env:
           MONK_SUBSCRIPTION_TOKEN: ${{ secrets.MONK_SUBSCRIPTION_TOKEN }}
           MONK_CLI_TOKEN: ${{ secrets.MONK_CLI_TOKEN }}
@@ -241,7 +233,6 @@ jobs:
     needs: [resolve-context, fetch-metadata]
     if: ${{ always() && needs.resolve-context.outputs.should_run == 'true' && needs.resolve-context.outputs.action != 'destroy' && needs.fetch-metadata.result == 'success' }}
     runs-on: ubuntu-latest
-    environment: monk-dynamic-envs
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -262,7 +253,7 @@ jobs:
           export REGISTRY_PASSWORD=$(echo "$REGISTRY_PASSWORD_B64" | base64 -di | base64 -di)
           echo "::add-mask::$REGISTRY_PASSWORD"
           if [ -z "$REGISTRY_ADDRESS" ] || [ -z "$REGISTRY_USERNAME" ] || [ -z "$REGISTRY_PASSWORD" ]; then
-            echo "::error::Registry credentials are required for dynamic environments"
+            echo "::error::Registry credentials are required for Monk Capsules"
             echo "REGISTRY_ADDRESS=${REGISTRY_ADDRESS:-(missing)}"
             echo "REGISTRY_USERNAME=${REGISTRY_USERNAME:-(missing)}"
             echo "REGISTRY_PASSWORD set: $([ -n "$REGISTRY_PASSWORD" ] && echo yes || echo no)"
@@ -279,7 +270,8 @@ jobs:
     needs: [resolve-context, fetch-metadata, build-images]
     if: ${{ always() && needs.resolve-context.outputs.should_run == 'true' && needs.resolve-context.outputs.action != 'destroy' && needs.fetch-metadata.result == 'success' && needs.build-images.result == 'success' }}
     runs-on: ubuntu-latest
-    environment: monk-dynamic-envs
+    environment:
+      name: capsule-${{ needs.resolve-context.outputs.environment_name }}
     container:
       image: monkreleases.azurecr.io/monk-ci:latest
     steps:
@@ -291,14 +283,16 @@ jobs:
         run: |
           chmod +x scripts/dynenv-deploy.sh
           chmod +x scripts/parse-manifest.sh
-      - name: Deploy to branch environment
+      - name: Deploy Monk Capsule
         run: |
           export MONKCODE=$(echo "$MONKCODE_B64" | base64 -di | base64 -di)
           echo "::add-mask::$MONKCODE"
+          export MONK_SERVICE_TOKEN=$(echo "$MONK_CLI_TOKEN_B64" | base64 -di | base64 -di)
+          echo "::add-mask::$MONK_SERVICE_TOKEN"
           ./scripts/dynenv-deploy.sh
         env:
           MONKCODE_B64: ${{ needs.fetch-metadata.outputs.monkcode }}
-          MONK_SERVICE_TOKEN: ${{ secrets.MONK_CLI_TOKEN }}
+          MONK_CLI_TOKEN_B64: ${{ needs.fetch-metadata.outputs.monk_cli_token }}
           BRANCH_TAG: ${{ needs.resolve-context.outputs.branch_tag }}
           MONK_WORKLOAD: "node-mongo/stack"
 
@@ -306,7 +300,7 @@ jobs:
     needs: resolve-context
     if: ${{ needs.resolve-context.outputs.should_run == 'true' && needs.resolve-context.outputs.action == 'destroy' }}
     runs-on: ubuntu-latest
-    environment: monk-dynamic-envs
+    environment: monk-capsules
     container:
       image: monkreleases.azurecr.io/monk-ci:latest
     steps:
@@ -319,7 +313,7 @@ jobs:
       - name: Make scripts executable
         run: |
           chmod +x scripts/dynenv-cleanup.sh
-      - name: Cleanup branch environment
+      - name: Destroy Monk Capsule
         run: ./scripts/dynenv-cleanup.sh
         env:
           CLUSTER_NAME: ${{ needs.resolve-context.outputs.cluster_name }}
@@ -329,3 +323,34 @@ jobs:
           MONK_SUBSCRIPTION_API_BASE: ${{ secrets.MONK_SUBSCRIPTION_API_BASE }}
           MONK_ORG_SLUG: ${{ secrets.MONK_ORG_SLUG }}
           MONK_PROJECT_SLUG: ${{ secrets.MONK_PROJECT_SLUG }}
+      - name: Deactivate GitHub Deployment
+        if: ${{ always() }}
+        continue-on-error: true
+        run: |
+          ENV_NAME="capsule-$ENVIRONMENT_NAME"
+          DEPLOYS=$(curl -sS \
+            "https://api.github.com/repos/$GITHUB_REPOSITORY/deployments?environment=$ENV_NAME&per_page=100" \
+            -H "Authorization: token $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            | jq -r '.[].id')
+          for DEPLOY_ID in $DEPLOYS; do
+            echo "Deactivating deployment $DEPLOY_ID..."
+            curl -sS -X POST \
+              "https://api.github.com/repos/$GITHUB_REPOSITORY/deployments/$DEPLOY_ID/statuses" \
+              -H "Authorization: token $GITHUB_TOKEN" \
+              -H "Accept: application/vnd.github+json" \
+              -d '{"state":"inactive","description":"Monk Capsule destroyed"}' > /dev/null 2>&1 || true
+            curl -sS -X DELETE \
+              "https://api.github.com/repos/$GITHUB_REPOSITORY/deployments/$DEPLOY_ID" \
+              -H "Authorization: token $GITHUB_TOKEN" \
+              -H "Accept: application/vnd.github+json" > /dev/null 2>&1 || true
+          done
+          echo "Cleaning up GitHub environment $ENV_NAME..."
+          curl -sS -X DELETE \
+            "https://api.github.com/repos/$GITHUB_REPOSITORY/environments/$ENV_NAME" \
+            -H "Authorization: token $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github+json" > /dev/null 2>&1 || true
+          echo "GitHub environment $ENV_NAME cleaned up"
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          ENVIRONMENT_NAME: ${{ needs.resolve-context.outputs.environment_name }}

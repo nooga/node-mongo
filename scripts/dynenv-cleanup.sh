@@ -6,7 +6,7 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
-printf "${GREEN}Monk Dynamic Environments - Cleanup Script${NC}\n"
+printf "${GREEN}Monk Capsules - Cleanup${NC}\n"
 
 # Validate required env vars
 for var in CLUSTER_NAME ENVIRONMENT_NAME MONK_SUBSCRIPTION_TOKEN MONK_CLI_TOKEN MONK_SUBSCRIPTION_API_BASE MONK_ORG_SLUG MONK_PROJECT_SLUG; do
