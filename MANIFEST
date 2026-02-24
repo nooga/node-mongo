@@ -1,17 +1,4 @@
 REPO node-mongo
-LOAD node-mongo.yaml
-
-ENV dev staging prod
-
-# Default entry (used if env-specific entry is not provided)
-ENTRY node-mongo/prod
-
-# Environment-specific entrypoints
-ENTRY dev:node-mongo/dev
-ENTRY staging:node-mongo/staging
-
-# Environment-specific entrypoint for production
-ENTRY prod:node-mongo/prod
-
-# Local build context (Dockerfile at repo root)
-IMAGE app:latest node-mongo/app . Dockerfile
+LOAD node-mongo.yaml 
+ENTRY node-mongo/stack
+IMAGE backend:latest backend . Dockerfile

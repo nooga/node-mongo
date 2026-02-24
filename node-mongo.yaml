@@ -1,84 +1,117 @@
 namespace: node-mongo
 
-mongo-db:
-  defines: digitalocean-database/database
-  engine: mongodb
-  region: nyc3
-  size: db-s-1vcpu-1gb
-  num_nodes: 1
-  name: monk-node-mongo-prod
-  services:
-    database:
-      protocol: custom
-
-app:
+backend:
   defines: runnable
+  metadata:
+    name: backend
+    description: A Node.js application with MongoDB integration.
   containers:
     main:
-      image: app:latest
+      image: "backend:latest"
   services:
     http:
-      container: main
-      port: 3000
+      description: HTTP service for the backend application.
       protocol: tcp
-      ingress-routes:
-        root:
-          path-prefix: /
+      port: <- $port
+      publish: true
+      host-port: <- $port
+      container: main
   connections:
-    mongo:
-      target: node-mongo/mongo-db
-      service: database
+    mongodb:
+      target: node-mongo/mongodb
+      service: mongodb
   depends:
     wait-for:
       runnables:
-        - node-mongo/mongo-db
-      timeout: 600
-  scale:
-    value: 2
-  checks:
-    readiness:
-      code: |
-        "http://localhost:3000/api/health" do-http-get error? not
-      period: 10
-      initialDelay: 10
+        - node-mongo/mongodb
+      timeout: 300
   variables:
-    mongodb-uri:
-      type: string
-      value: <- connection-target("mongo") entity-state get-member("connection_uri")
-      env: MONGODB_URI
-    node-env:
-      type: string
-      value: production
-      env: NODE_ENV
     port:
       type: int
-      value: 3000
       env: PORT
-
-prod:
-  defines: group
-  members:
-    - node-mongo/mongo-db
-    - node-mongo/app
-
-dev:
-  defines: group
-  members:
-    - node-mongo/mongo-db
-    - node-mongo/app
-  variables:
-    environment:
+      description: Port on which the application runs.
+      value: 3000
+    node-env:
       type: string
-      value: dev
-      env: ENVIRONMENT
-
-staging:
-  defines: group
-  members:
-    - node-mongo/mongo-db
-    - node-mongo/app
-  variables:
-    environment:
+      env: NODE_ENV
+      description: Environment mode for the application.
+      value: development
+    mongodb-uri:
       type: string
-      value: staging
-      env: ENVIRONMENT
+      env: MONGODB_URI
+      description: MongoDB connection URI.
+      value: <- `mongodb://${mongodb-username}:${mongodb-password}@${mongodb-host}:${mongodb-port}/${mongodb-database}?authSource=admin`
+    mongodb-username:
+      type: string
+      env: MONGODB_USERNAME
+      description: Username for MongoDB authentication.
+      value: <- $global-mongo-init-username default("marcin")
+    mongodb-password:
+      type: string
+      env: MONGODB_PASSWORD
+      description: Password for MongoDB authentication.
+      value: <- $global-mongo-init-password default("your_password")
+    mongodb-host:
+      type: string
+      env: MONGODB_HOST
+      description: Host for MongoDB connection.
+      value: <- connection-hostname("mongodb")
+    mongodb-port:
+      type: int
+      env: MONGODB_PORT
+      description: Port for MongoDB connection.
+      value: <- connection-port("mongodb")
+    mongodb-database:
+      type: string
+      env: MONGODB_DATABASE
+      description: Database name for MongoDB connection.
+      value: <- $global-mongo-init-database default("nodeapp")
+
+mongodb:
+  defines: runnable
+  inherits: mongodb/mongodb
+  variables:
+    mongo-init-password:
+      type: string
+      env: MONGO_INITDB_ROOT_PASSWORD
+      description: Root password for MongoDB initialization.
+      value: <- $global-mongo-init-password default("password")
+    mongo-init-username:
+      type: string
+      env: MONGO_INITDB_ROOT_USERNAME
+      description: Root username for MongoDB initialization.
+      value: <- $global-mongo-init-username default("mongo")
+    mongodb-image:
+      type: string
+      env: mongodb-image
+      description: Image version for MongoDB.
+      value: latest
+    mongo-init-database:
+      type: string
+      env: MONGO_INITDB_DATABASE
+      description: Default database to initialize in MongoDB.
+      value: <- $global-mongo-init-database default("mongo")
+    mongo-image:
+      type: string
+      env: mongo-image
+      description: Image version for MongoDB container.
+      value: latest
+
+stack:
+  defines: group
+  variables:
+    global-mongo-init-username:
+      type: string
+      description: Username for MongoDB authentication.
+      value: mongo
+    global-mongo-init-password:
+      type: string
+      description: Password for MongoDB authentication.
+      value: zerozero1234
+    global-mongo-init-database:
+      type: string
+      description: Database name for MongoDB connection.
+      value: mongo
+  members:
+    - node-mongo/backend
+    - node-mongo/mongodb

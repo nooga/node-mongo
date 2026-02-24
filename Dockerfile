@@ -1,23 +1,27 @@
-# syntax=docker/dockerfile:1
-FROM node:18-alpine
+# Use the official Node.js image as the base image
+FROM node:18-alpine AS base
 
+# Set the working directory
 WORKDIR /app
 
-# Install dependencies (using the lockfile) before copying the full source tree for better layer caching.
+# Copy package.json and pnpm-lock.yaml for dependency installation
 COPY package.json pnpm-lock.yaml ./
-RUN corepack enable \
-  && corepack prepare pnpm@8.10.0 --activate \
-  && pnpm install --frozen-lockfile --prod
 
-# Copy application sources
+# Install dependencies using pnpm
+RUN npm install -g pnpm && pnpm install --frozen-lockfile
+
+# Copy the application source code
 COPY src/ ./src/
 COPY public/ ./public/
 
-ENV NODE_ENV=production
-ENV PORT=3000
+# Copy the .env file if it exists
+COPY env.example .env
 
-# Use the non-root 'node' user provided by the base image
-USER node
-
+# Expose the port the application runs on
 EXPOSE 3000
+
+# Set environment variables
+ENV NODE_ENV=production
+
+# Start the application
 CMD ["node", "src/server.js"]
