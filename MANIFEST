@@ -1,19 +1,4 @@
 REPO node-mongo
-
-LOAD node-mongo.yaml
-
-ENV dev staging prod
-
-# Default entry (used when env-specific entry is not provided)
-ENTRY node-mongo/prod
-
-# Env-specific entrypoints
-ENTRY dev:node-mongo/dev
-ENTRY staging:node-mongo/staging
-ENTRY prod:node-mongo/prod
-
-# Local image build mapping for the app container
-IMAGE app:latest node-mongo/app-dev,node-mongo/app-staging,node-mongo/app-prod . Dockerfile
-
-# User-provided secrets ONLY. Secrets written by entities (like *-mongodb-password) are internal.
-SECRET default-mongodb-token default-mongodb-org
+LOAD node-mongo.yaml 
+ENTRY node-mongo/stack
+IMAGE backend:latest backend . Dockerfile

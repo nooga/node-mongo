@@ -4,10 +4,34 @@ const cors = require("cors");
 const helmet = require("helmet");
 const compression = require("compression");
 const path = require("path");
+const { auth } = require("express-oauth2-jwt-bearer");
 require("dotenv").config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Auth0 JWT configuration
+// For local dev, Auth0 is optional: if env vars are missing, auth is disabled.
+const AUTH0_AUDIENCE = process.env.AUTH0_AUDIENCE;
+const AUTH0_ISSUER_BASE_URL =
+  process.env.AUTH0_ISSUER_BASE_URL ||
+  (process.env.AUTH0_DOMAIN
+    ? `https://${process.env.AUTH0_DOMAIN.replace(/^https?:\/\//, "")}`
+    : undefined);
+
+let jwtCheck = (req, res, next) => next();
+if (AUTH0_ISSUER_BASE_URL && AUTH0_AUDIENCE) {
+  jwtCheck = auth({
+    issuerBaseURL: AUTH0_ISSUER_BASE_URL,
+    audience: AUTH0_AUDIENCE,
+    tokenSigningAlg: "RS256",
+  });
+} else {
+  console.warn(
+    "⚠️  Auth0 is disabled: missing AUTH0_AUDIENCE and/or AUTH0_ISSUER_BASE_URL (or AUTH0_DOMAIN)."
+  );
+  console.warn("   All /api/* routes will run without JWT validation.");
+}
 
 // MongoDB Configuration
 const MONGODB_URI =
@@ -68,7 +92,7 @@ app.get("/api/health", (req, res) => {
   });
 });
 
-app.get("/api/users", async (req, res) => {
+app.get("/api/users", jwtCheck, async (req, res) => {
   try {
     const users = await User.find().sort({ createdAt: -1 });
     res.json(users);
@@ -77,7 +101,7 @@ app.get("/api/users", async (req, res) => {
   }
 });
 
-app.post("/api/users", async (req, res) => {
+app.post("/api/users", jwtCheck, async (req, res) => {
   try {
     const { name, email } = req.body;
     const user = new User({ name, email });
@@ -88,7 +112,7 @@ app.post("/api/users", async (req, res) => {
   }
 });
 
-app.delete("/api/users/:id", async (req, res) => {
+app.delete("/api/users/:id", jwtCheck, async (req, res) => {
   try {
     await User.findByIdAndDelete(req.params.id);
     res.status(204).send();
@@ -97,9 +121,25 @@ app.delete("/api/users/:id", async (req, res) => {
   }
 });
 
+// Debug route: returns validated JWT claims
+app.get("/api/me", jwtCheck, (req, res) => {
+  res.json(req.auth || {});
+});
+
 // Serve index.html for root route
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "../public/index.html"));
+});
+
+// Auth error handler
+app.use((err, req, res, next) => {
+  if (err && err.status === 401) {
+    return res.status(401).json({
+      error: "Unauthorized",
+      message: err.message,
+    });
+  }
+  return next(err);
 });
 
 // Start server
