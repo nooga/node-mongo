@@ -5,6 +5,34 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Node.js MongoDB Demo</title>
     <style>
+      :root {
+        --bg-main: #f0f6ff;
+        --bg-gradient: radial-gradient(
+            circle at 15% 10%,
+            rgba(96, 165, 250, 0.35),
+            transparent 35%
+          ),
+          radial-gradient(
+            circle at 85% 85%,
+            rgba(37, 99, 235, 0.28),
+            transparent 40%
+          ),
+          linear-gradient(145deg, #eff6ff, #e0edff);
+        --surface: #ffffff;
+        --surface-soft: #f8fbff;
+        --text-primary: #0f172a;
+        --text-secondary: #475569;
+        --border: #dbeafe;
+        --brand: #2563eb;
+        --brand-strong: #1d4ed8;
+        --danger: #dc2626;
+        --danger-strong: #b91c1c;
+        --success-bg: #e6f5ec;
+        --success-text: #166534;
+        --danger-bg: #fde8e8;
+        --danger-text: #991b1b;
+      }
+
       * {
         margin: 0;
         padding: 0;
@@ -12,173 +40,203 @@
       }
 
       body {
-        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        font-family: "Inter", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: var(--bg-gradient);
+        color: var(--text-primary);
         min-height: 100vh;
-        padding: 20px;
+        padding: 24px;
       }
 
       .container {
-        max-width: 800px;
+        max-width: 880px;
         margin: 0 auto;
-        background: white;
-        border-radius: 20px;
-        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        background: rgba(255, 255, 255, 0.86);
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(255, 255, 255, 0.65);
+        border-radius: 24px;
+        box-shadow: 0 24px 48px rgba(15, 23, 42, 0.12);
         overflow: hidden;
       }
 
       .header {
-        background: linear-gradient(45deg, #1e3c72, #2a5298);
-        color: white;
-        padding: 30px;
+        background: linear-gradient(135deg, #0f3ca6, #2563eb 55%, #3b82f6);
+        color: #ffffff;
+        padding: 34px;
         text-align: center;
       }
 
       .header h1 {
-        font-size: 2.5rem;
-        margin-bottom: 10px;
+        font-size: 2.2rem;
+        letter-spacing: 0.3px;
+        margin-bottom: 8px;
+      }
+
+      .header p {
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 1rem;
       }
 
       .status {
-        padding: 20px;
-        margin: 20px;
-        border-radius: 10px;
-        font-weight: bold;
+        padding: 14px 16px;
+        margin: 20px 24px 8px;
+        border-radius: 12px;
+        font-weight: 600;
         text-align: center;
+        border: 1px solid transparent;
       }
 
       .status.connected {
-        background: #d4edda;
-        color: #155724;
-        border: 1px solid #c3e6cb;
+        background: var(--success-bg);
+        color: var(--success-text);
+        border-color: #b8ebca;
       }
 
       .status.disconnected {
-        background: #f8d7da;
-        color: #721c24;
-        border: 1px solid #f5c6cb;
+        background: var(--danger-bg);
+        color: var(--danger-text);
+        border-color: #f6baba;
+      }
+
+      .form-section,
+      .users-section {
+        padding: 26px 28px 30px;
       }
 
       .form-section {
-        padding: 30px;
-        border-bottom: 1px solid #eee;
+        border-bottom: 1px solid var(--border);
       }
 
-      .form-section h2 {
-        color: #333;
-        margin-bottom: 20px;
-        font-size: 1.5rem;
+      .form-section h2,
+      .users-section h2 {
+        color: #1e3a8a;
+        margin-bottom: 18px;
+        font-size: 1.2rem;
+        font-weight: 700;
       }
 
       .form-group {
-        margin-bottom: 20px;
+        margin-bottom: 16px;
       }
 
       .form-group label {
         display: block;
-        margin-bottom: 8px;
-        color: #555;
-        font-weight: 500;
+        margin-bottom: 7px;
+        color: var(--text-secondary);
+        font-weight: 600;
+        font-size: 0.92rem;
       }
 
       .form-group input {
         width: 100%;
-        padding: 12px;
-        border: 2px solid #ddd;
-        border-radius: 8px;
-        font-size: 16px;
-        transition: border-color 0.3s;
+        padding: 12px 13px;
+        border: 1px solid #c7ddff;
+        border-radius: 10px;
+        font-size: 0.98rem;
+        color: var(--text-primary);
+        background: #ffffff;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
       }
 
       .form-group input:focus {
         outline: none;
-        border-color: #667eea;
-        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        border-color: #60a5fa;
+        box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.16);
       }
 
       .btn {
-        background: linear-gradient(45deg, #667eea, #764ba2);
-        color: white;
+        background: linear-gradient(135deg, var(--brand), var(--brand-strong));
+        color: #ffffff;
         border: none;
-        padding: 12px 30px;
-        border-radius: 8px;
-        font-size: 16px;
+        padding: 11px 24px;
+        border-radius: 10px;
+        font-size: 0.95rem;
+        font-weight: 600;
         cursor: pointer;
-        transition: transform 0.2s;
+        box-shadow: 0 10px 16px rgba(37, 99, 235, 0.24);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
       }
 
       .btn:hover {
-        transform: translateY(-2px);
+        transform: translateY(-1px);
+        box-shadow: 0 14px 20px rgba(37, 99, 235, 0.3);
       }
 
       .btn:active {
         transform: translateY(0);
       }
 
-      .users-section {
-        padding: 30px;
+      .loading {
+        text-align: center;
+        padding: 14px;
+        color: #64748b;
+        background: var(--surface-soft);
+        border: 1px dashed #bfdbfe;
+        border-radius: 10px;
       }
 
       .user-card {
-        background: #f8f9fa;
-        border: 1px solid #dee2e6;
-        border-radius: 10px;
-        padding: 20px;
-        margin-bottom: 15px;
+        background: linear-gradient(180deg, #ffffff, #f9fcff);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 16px 18px;
+        margin-bottom: 12px;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        transition: transform 0.2s;
+        gap: 14px;
+        transition: transform 0.18s ease, box-shadow 0.18s ease;
       }
 
       .user-card:hover {
         transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 12px 24px rgba(30, 64, 175, 0.14);
       }
 
       .user-info h3 {
-        color: #333;
-        margin-bottom: 5px;
+        color: var(--text-primary);
+        margin-bottom: 3px;
+        font-size: 1.03rem;
       }
 
       .user-info p {
-        color: #666;
-        font-size: 14px;
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+        margin-bottom: 2px;
+      }
+
+      .timestamp {
+        color: #64748b;
+        font-size: 0.78rem;
       }
 
       .delete-btn {
-        background: #dc3545;
-        color: white;
+        background: var(--danger);
+        color: #ffffff;
         border: none;
-        padding: 8px 16px;
-        border-radius: 5px;
+        padding: 8px 14px;
+        border-radius: 8px;
         cursor: pointer;
-        font-size: 14px;
+        font-size: 0.84rem;
+        font-weight: 600;
+        transition: background 0.2s ease;
       }
 
       .delete-btn:hover {
-        background: #c82333;
-      }
-
-      .loading {
-        text-align: center;
-        padding: 20px;
-        color: #666;
+        background: var(--danger-strong);
       }
 
       .error {
-        background: #f8d7da;
-        color: #721c24;
-        padding: 15px;
-        border-radius: 5px;
-        margin: 20px;
-        border: 1px solid #f5c6cb;
+        background: var(--danger-bg);
+        color: var(--danger-text);
+        padding: 14px;
+        border-radius: 10px;
+        border: 1px solid #fecaca;
       }
 
       @keyframes fadeIn {
         from {
           opacity: 0;
-          transform: translateY(20px);
+          transform: translateY(12px);
         }
         to {
           opacity: 1;
@@ -187,15 +245,39 @@
       }
 
       .fade-in {
-        animation: fadeIn 0.3s ease-out;
+        animation: fadeIn 0.25s ease-out;
+      }
+
+      @media (max-width: 640px) {
+        body {
+          padding: 14px;
+        }
+
+        .header {
+          padding: 24px 18px;
+        }
+
+        .header h1 {
+          font-size: 1.7rem;
+        }
+
+        .form-section,
+        .users-section {
+          padding: 20px;
+        }
+
+        .user-card {
+          flex-direction: column;
+          align-items: flex-start;
+        }
       }
     </style>
   </head>
   <body>
     <div class="container">
       <div class="header">
-        <h1>🚀 Node.js MongoDB Demo</h1>
-        <p>Modern web application with database integration</p>
+        <h1>Node.js MongoDB Dashboard</h1>
+        <p>Modern user management with a clean blue theme</p>
       </div>
 
       <div id="status" class="status">
@@ -213,7 +295,7 @@
             <label for="email">Email Address</label>
             <input type="email" id="email" name="email" required />
           </div>
-          <button type="submit" class="btn">Add User</button>
+          <button type="submit" class="btn">Create User</button>
         </form>
       </div>
 
@@ -253,26 +335,16 @@
             const data = await response.json();
 
             if (data.database === "connected") {
-              this.statusEl.innerHTML = `
-                            <div class="connected">
-                                ✅ Database Connected - ${data.timestamp}
-                            </div>
-                        `;
+              this.statusEl.innerHTML = `✅ Database connected - ${new Date(
+                data.timestamp
+              ).toLocaleString()}`;
               this.statusEl.className = "status connected";
             } else {
-              this.statusEl.innerHTML = `
-                            <div class="disconnected">
-                                ❌ Database Disconnected
-                            </div>
-                        `;
+              this.statusEl.innerHTML = "⚠️ Database disconnected";
               this.statusEl.className = "status disconnected";
             }
           } catch (error) {
-            this.statusEl.innerHTML = `
-                        <div class="disconnected">
-                            ❌ Connection Error: ${error.message}
-                        </div>
-                    `;
+            this.statusEl.innerHTML = `⚠️ Connection error: ${error.message}`;
             this.statusEl.className = "status disconnected";
           }
         }
@@ -284,7 +356,7 @@
 
             if (users.length === 0) {
               this.usersListEl.innerHTML =
-                '<p class="loading">No users found. Add some users to get started!</p>';
+                '<p class="loading">No users found yet. Create the first user to get started.</p>';
               return;
             }
 
@@ -295,9 +367,9 @@
                             <div class="user-info">
                                 <h3>${this.escapeHtml(user.name)}</h3>
                                 <p>${this.escapeHtml(user.email)}</p>
-                                <p><small>Added: ${new Date(
+                                <p class="timestamp">Added: ${new Date(
                                   user.createdAt
-                                ).toLocaleString()}</small></p>
+                                ).toLocaleString()}</p>
                             </div>
                             <button class="delete-btn" onclick="app.deleteUser('${
                               user._id
