@@ -6,18 +6,18 @@
     <title>Node.js MongoDB Demo</title>
     <style>
       :root {
-        --blue-950: #0a2346;
-        --blue-900: #11356d;
-        --blue-800: #17458d;
-        --blue-700: #1d5cb5;
-        --blue-600: #2872d8;
-        --blue-500: #3c8dff;
-        --blue-100: #e8f1ff;
-        --blue-50: #f4f8ff;
+        --green-950: #082f24;
+        --green-900: #0f5138;
+        --green-800: #156447;
+        --green-700: #1d7a58;
+        --green-600: #27936b;
+        --green-500: #31af7f;
+        --green-100: #dff8ec;
+        --green-50: #f1fcf6;
         --ink-900: #111827;
         --ink-700: #374151;
         --ink-500: #6b7280;
-        --border: #dbe7ff;
+        --border: #ccebdc;
       }
 
       * {
@@ -29,9 +29,9 @@
       body {
         font-family: Inter, "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
         background:
-          radial-gradient(circle at top right, rgba(60, 141, 255, 0.24), transparent 40%),
-          radial-gradient(circle at bottom left, rgba(29, 92, 181, 0.22), transparent 35%),
-          linear-gradient(160deg, #eff5ff 0%, #dbe9ff 100%);
+          radial-gradient(circle at top right, rgba(49, 175, 127, 0.24), transparent 40%),
+          radial-gradient(circle at bottom left, rgba(29, 122, 88, 0.22), transparent 35%),
+          linear-gradient(160deg, #edfbf3 0%, #d7f4e4 100%);
         color: var(--ink-900);
         min-height: 100vh;
         padding: 28px 18px;
@@ -43,13 +43,13 @@
         background: rgba(255, 255, 255, 0.9);
         border: 1px solid rgba(255, 255, 255, 0.75);
         border-radius: 24px;
-        box-shadow: 0 24px 60px rgba(14, 42, 86, 0.18);
+        box-shadow: 0 24px 60px rgba(8, 47, 36, 0.18);
         overflow: hidden;
         backdrop-filter: blur(8px);
       }
 
       .header {
-        background: linear-gradient(125deg, var(--blue-950) 0%, var(--blue-700) 55%, var(--blue-500) 100%);
+        background: linear-gradient(125deg, var(--green-950) 0%, var(--green-700) 55%, var(--green-500) 100%);
         color: #fff;
         padding: 42px 32px;
         text-align: center;
@@ -99,7 +99,7 @@
 
       .form-section h2,
       .users-section h2 {
-        color: var(--blue-900);
+        color: var(--green-900);
         margin-bottom: 18px;
         font-size: 1.35rem;
         letter-spacing: -0.01em;
@@ -119,27 +119,27 @@
       .form-group input {
         width: 100%;
         padding: 12px 14px;
-        border: 1px solid #cddcff;
+        border: 1px solid #c9e8d8;
         border-radius: 10px;
-        background: #fbfdff;
+        background: #f9fefb;
         color: var(--ink-900);
         font-size: 15px;
         transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s;
       }
 
       .form-group input:hover {
-        border-color: #aac4fb;
+        border-color: #9cd8bf;
       }
 
       .form-group input:focus {
         outline: none;
         background: #fff;
-        border-color: var(--blue-500);
-        box-shadow: 0 0 0 3px rgba(60, 141, 255, 0.18);
+        border-color: var(--green-500);
+        box-shadow: 0 0 0 3px rgba(49, 175, 127, 0.2);
       }
 
       .btn {
-        background: linear-gradient(135deg, var(--blue-700), var(--blue-500));
+        background: linear-gradient(135deg, var(--green-700), var(--green-500));
         color: #fff;
         border: none;
         padding: 11px 18px;
@@ -148,7 +148,7 @@
         font-weight: 600;
         cursor: pointer;
         transition: transform 0.15s ease, box-shadow 0.2s ease, filter 0.2s ease;
-        box-shadow: 0 8px 18px rgba(23, 69, 141, 0.28);
+        box-shadow: 0 8px 18px rgba(13, 93, 62, 0.28);
       }
 
       .btn:hover {
@@ -161,7 +161,7 @@
       }
 
       .user-card {
-        background: linear-gradient(180deg, #fff, var(--blue-50));
+        background: linear-gradient(180deg, #fff, var(--green-50));
         border: 1px solid var(--border);
         border-radius: 14px;
         padding: 18px;
@@ -175,7 +175,7 @@
 
       .user-card:hover {
         transform: translateY(-1px);
-        box-shadow: 0 10px 20px rgba(15, 51, 107, 0.12);
+        box-shadow: 0 10px 20px rgba(8, 72, 49, 0.13);
       }
 
       .user-info h3 {
