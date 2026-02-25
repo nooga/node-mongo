@@ -1,0 +1,113 @@
+namespace: node-mongo
+
+backend:
+  defines: runnable
+  metadata:
+    name: backend
+    description: A Node.js application with MongoDB integration.
+  containers:
+    main:
+      image: "backend:latest"
+  services:
+    http:
+      description: HTTP service for the backend application.
+      protocol: tcp
+      port: <- $port
+      container: main
+      ingress-routes:
+        api:
+          path-prefix: /
+          path-rewrite:
+            regex: "^/?(.*)"
+            to: "/$1"
+  connections:
+    mongodb:
+      target: node-mongo/mongodb
+      service: mongodb
+  depends:
+    wait-for:
+      runnables:
+        - node-mongo/mongodb
+      timeout: 300
+  variables:
+    port:
+      type: int
+      env: PORT
+      description: Port on which the application runs.
+      value: 3000
+    node-env:
+      type: string
+      env: NODE_ENV
+      description: Environment mode for the application.
+      value: development
+    mongodb-uri:
+      type: string
+      env: MONGODB_URI
+      description: MongoDB connection URI.
+      # server.js expects a standard URI; credentials are provided separately via env vars
+      value: <- `mongodb://${mongodb-host}:${mongodb-port}/${mongodb-database}?authSource=admin`
+    mongodb-username:
+      type: string
+      env: MONGODB_USERNAME
+      description: Username for MongoDB authentication.
+      value: <- $global-mongo-init-username default("marcin")
+    mongodb-password:
+      type: string
+      env: MONGODB_PASSWORD
+      description: Password for MongoDB authentication.
+      value: <- $global-mongo-init-password
+    mongodb-host:
+      type: string
+      env: MONGODB_HOST
+      description: Host for MongoDB connection.
+      value: <- connection-hostname("mongodb")
+    mongodb-port:
+      type: int
+      env: MONGODB_PORT
+      description: Port for MongoDB connection.
+      value: <- connection-port("mongodb")
+    mongodb-database:
+      type: string
+      env: MONGODB_DATABASE
+      description: Database name for MongoDB connection.
+      value: <- $global-mongo-init-database default("nodeapp")
+
+mongodb:
+  defines: runnable
+  inherits: mongodb/mongodb
+  variables:
+    mongo-init-password:
+      type: string
+      env: MONGO_INITDB_ROOT_PASSWORD
+      description: Root password for MongoDB initialization.
+      value: <- $global-mongo-init-password
+    mongo-init-username:
+      type: string
+      env: MONGO_INITDB_ROOT_USERNAME
+      description: Root username for MongoDB initialization.
+      value: <- $global-mongo-init-username default("mongo")
+    mongo-init-database:
+      type: string
+      env: MONGO_INITDB_DATABASE
+      description: Default database to initialize in MongoDB.
+      value: <- $global-mongo-init-database default("mongo")
+
+stack:
+  defines: group
+  variables:
+    global-mongo-init-username:
+      type: string
+      description: Username for MongoDB authentication.
+      value: mongo
+    global-mongo-init-database:
+      type: string
+      description: Database name for MongoDB connection.
+      value: mongo
+    global-mongo-init-password:
+      type: string
+      description: Password for MongoDB authentication.
+      value: zerozero1234
+  members:
+    - node-mongo/backend
+    - node-mongo/mongodb
+ 
