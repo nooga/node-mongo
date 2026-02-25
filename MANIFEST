@@ -1,4 +1,0 @@
-REPO node-mongo
-LOAD node-mongo.yaml 
-ENTRY node-mongo/stack
-IMAGE backend:latest backend . Dockerfile
