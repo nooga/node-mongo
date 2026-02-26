@@ -13,7 +13,8 @@
 
       body {
         font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: #0b0f14;
+        color: #e5e7eb;
         min-height: 100vh;
         padding: 20px;
       }
@@ -21,17 +22,19 @@
       .container {
         max-width: 800px;
         margin: 0 auto;
-        background: white;
-        border-radius: 20px;
-        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        background: #11161d;
+        border-radius: 16px;
+        border: 1px solid #1f2937;
+        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
         overflow: hidden;
       }
 
       .header {
-        background: linear-gradient(45deg, #1e3c72, #2a5298);
-        color: white;
+        background: #11161d;
+        color: #f9fafb;
         padding: 30px;
         text-align: center;
+        border-bottom: 1px solid #1f2937;
       }
 
       .header h1 {
@@ -48,26 +51,27 @@
       }
 
       .status.connected {
-        background: #d4edda;
-        color: #155724;
-        border: 1px solid #c3e6cb;
+        background: #0f1f17;
+        color: #86efac;
+        border: 1px solid #14532d;
       }
 
       .status.disconnected {
-        background: #f8d7da;
-        color: #721c24;
-        border: 1px solid #f5c6cb;
+        background: #291216;
+        color: #fda4af;
+        border: 1px solid #7f1d1d;
       }
 
       .form-section {
         padding: 30px;
-        border-bottom: 1px solid #eee;
+        border-bottom: 1px solid #1f2937;
       }
 
       .form-section h2 {
-        color: #333;
+        color: #f3f4f6;
         margin-bottom: 20px;
         font-size: 1.5rem;
+        font-weight: 600;
       }
 
       .form-group {
@@ -77,38 +81,42 @@
       .form-group label {
         display: block;
         margin-bottom: 8px;
-        color: #555;
+        color: #cbd5e1;
         font-weight: 500;
       }
 
       .form-group input {
         width: 100%;
         padding: 12px;
-        border: 2px solid #ddd;
+        background: #0f141b;
+        color: #f3f4f6;
+        border: 1px solid #334155;
         border-radius: 8px;
         font-size: 16px;
-        transition: border-color 0.3s;
+        transition: border-color 0.2s, box-shadow 0.2s;
       }
 
       .form-group input:focus {
         outline: none;
-        border-color: #667eea;
-        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        border-color: #94a3b8;
+        box-shadow: 0 0 0 3px rgba(148, 163, 184, 0.18);
       }
 
       .btn {
-        background: linear-gradient(45deg, #667eea, #764ba2);
-        color: white;
-        border: none;
+        background: #f8fafc;
+        color: #0b0f14;
+        border: 1px solid #f1f5f9;
         padding: 12px 30px;
         border-radius: 8px;
         font-size: 16px;
+        font-weight: 600;
         cursor: pointer;
-        transition: transform 0.2s;
+        transition: transform 0.15s, opacity 0.15s;
       }
 
       .btn:hover {
         transform: translateY(-2px);
+        opacity: 0.92;
       }
 
       .btn:active {
@@ -120,8 +128,8 @@
       }
 
       .user-card {
-        background: #f8f9fa;
-        border: 1px solid #dee2e6;
+        background: #151c24;
+        border: 1px solid #273244;
         border-radius: 10px;
         padding: 20px;
         margin-bottom: 15px;
@@ -133,22 +141,22 @@
 
       .user-card:hover {
         transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 8px 18px rgba(0, 0, 0, 0.25);
       }
 
       .user-info h3 {
-        color: #333;
+        color: #f3f4f6;
         margin-bottom: 5px;
       }
 
       .user-info p {
-        color: #666;
+        color: #9ca3af;
         font-size: 14px;
       }
 
       .delete-btn {
-        background: #dc3545;
-        color: white;
+        background: #b91c1c;
+        color: #fee2e2;
         border: none;
         padding: 8px 16px;
         border-radius: 5px;
@@ -157,22 +165,22 @@
       }
 
       .delete-btn:hover {
-        background: #c82333;
+        background: #991b1b;
       }
 
       .loading {
         text-align: center;
         padding: 20px;
-        color: #666;
+        color: #9ca3af;
       }
 
       .error {
-        background: #f8d7da;
-        color: #721c24;
+        background: #291216;
+        color: #fda4af;
         padding: 15px;
         border-radius: 5px;
         margin: 20px;
-        border: 1px solid #f5c6cb;
+        border: 1px solid #7f1d1d;
       }
 
       @keyframes fadeIn {
@@ -189,13 +197,22 @@
       .fade-in {
         animation: fadeIn 0.3s ease-out;
       }
+
+      #confettiCanvas {
+        position: fixed;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 1000;
+      }
     </style>
   </head>
   <body>
     <div class="container">
       <div class="header">
-        <h1>🚀 Node.js MongoDB Demo</h1>
-        <p>Modern web application with database integration</p>
+        <h1>Node.js MongoDB Demo</h1>
+        <p>Clean UI with database integration</p>
       </div>
 
       <div id="status" class="status">
@@ -224,6 +241,7 @@
         </div>
       </div>
     </div>
+    <canvas id="confettiCanvas"></canvas>
 
     <script>
       class App {
@@ -231,6 +249,10 @@
           this.statusEl = document.getElementById("status");
           this.usersListEl = document.getElementById("usersList");
           this.userForm = document.getElementById("userForm");
+          this.confettiCanvas = document.getElementById("confettiCanvas");
+          this.confettiCtx = this.confettiCanvas.getContext("2d");
+          this.resizeConfettiCanvas();
+          window.addEventListener("resize", () => this.resizeConfettiCanvas());
 
           this.init();
         }
@@ -333,6 +355,7 @@
 
             if (response.ok) {
               e.target.reset();
+              this.celebrateSave();
               await this.loadUsers();
               await this.checkHealth();
             } else {
@@ -367,6 +390,71 @@
           const div = document.createElement("div");
           div.textContent = text;
           return div.innerHTML;
+        }
+
+        resizeConfettiCanvas() {
+          this.confettiCanvas.width = window.innerWidth;
+          this.confettiCanvas.height = window.innerHeight;
+        }
+
+        celebrateSave() {
+          const colors = ["#f8fafc", "#a5b4fc", "#86efac", "#f9a8d4", "#fcd34d"];
+          const pieces = Array.from({ length: 130 }, () => ({
+            x: window.innerWidth / 2 + (Math.random() - 0.5) * 80,
+            y: window.innerHeight * 0.25,
+            vx: (Math.random() - 0.5) * 8,
+            vy: Math.random() * -10 - 6,
+            gravity: 0.22 + Math.random() * 0.18,
+            size: 4 + Math.random() * 6,
+            color: colors[Math.floor(Math.random() * colors.length)],
+            rotation: Math.random() * Math.PI,
+            vr: (Math.random() - 0.5) * 0.28,
+          }));
+
+          const start = performance.now();
+          const duration = 1200;
+
+          const animate = (now) => {
+            const elapsed = now - start;
+            this.confettiCtx.clearRect(
+              0,
+              0,
+              this.confettiCanvas.width,
+              this.confettiCanvas.height
+            );
+
+            pieces.forEach((piece) => {
+              piece.x += piece.vx;
+              piece.y += piece.vy;
+              piece.vy += piece.gravity;
+              piece.rotation += piece.vr;
+
+              this.confettiCtx.save();
+              this.confettiCtx.translate(piece.x, piece.y);
+              this.confettiCtx.rotate(piece.rotation);
+              this.confettiCtx.fillStyle = piece.color;
+              this.confettiCtx.fillRect(
+                -piece.size / 2,
+                -piece.size / 2,
+                piece.size,
+                piece.size
+              );
+              this.confettiCtx.restore();
+            });
+
+            if (elapsed < duration) {
+              requestAnimationFrame(animate);
+            } else {
+              this.confettiCtx.clearRect(
+                0,
+                0,
+                this.confettiCanvas.width,
+                this.confettiCanvas.height
+              );
+            }
+          };
+
+          requestAnimationFrame(animate);
         }
       }
 
