@@ -76,6 +76,10 @@ if [ -z "$MONKCODE" ] || [ "$MONKCODE" = "null" ]; then
 fi
 printf "${GREEN}Cluster created. ID: $CLUSTER_ID${NC}\n"
 
+# A.5.1 Enable ingress plugin
+printf "${GREEN}Enabling ingress plugin...${NC}\n"
+monk plugins enable ingress || printf "${YELLOW}Warning: Failed to enable ingress plugin (non-blocking)${NC}\n"
+
 # A.6 Set up per-cluster container registry
 printf "${GREEN}Setting up container registry...${NC}\n"
 
