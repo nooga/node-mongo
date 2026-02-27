@@ -13,7 +13,8 @@
 
       body {
         font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: #e5e7eb;
+        background: linear-gradient(135deg, #0f172a 0%, #111827 100%);
         min-height: 100vh;
         padding: 20px;
       }
@@ -21,17 +22,19 @@
       .container {
         max-width: 800px;
         margin: 0 auto;
-        background: white;
+        background: #0b1220;
         border-radius: 20px;
-        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        border: 1px solid #1f2937;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.45);
         overflow: hidden;
       }
 
       .header {
-        background: linear-gradient(45deg, #1e3c72, #2a5298);
+        background: linear-gradient(45deg, #1e293b, #0f172a);
         color: white;
         padding: 30px;
         text-align: center;
+        border-bottom: 1px solid #1f2937;
       }
 
       .header h1 {
@@ -48,24 +51,24 @@
       }
 
       .status.connected {
-        background: #d4edda;
-        color: #155724;
-        border: 1px solid #c3e6cb;
+        background: #052e16;
+        color: #86efac;
+        border: 1px solid #14532d;
       }
 
       .status.disconnected {
-        background: #f8d7da;
-        color: #721c24;
-        border: 1px solid #f5c6cb;
+        background: #450a0a;
+        color: #fca5a5;
+        border: 1px solid #7f1d1d;
       }
 
       .form-section {
         padding: 30px;
-        border-bottom: 1px solid #eee;
+        border-bottom: 1px solid #1f2937;
       }
 
       .form-section h2 {
-        color: #333;
+        color: #f3f4f6;
         margin-bottom: 20px;
         font-size: 1.5rem;
       }
@@ -77,14 +80,16 @@
       .form-group label {
         display: block;
         margin-bottom: 8px;
-        color: #555;
+        color: #cbd5e1;
         font-weight: 500;
       }
 
       .form-group input {
         width: 100%;
         padding: 12px;
-        border: 2px solid #ddd;
+        color: #e5e7eb;
+        background: #111827;
+        border: 2px solid #374151;
         border-radius: 8px;
         font-size: 16px;
         transition: border-color 0.3s;
@@ -92,12 +97,12 @@
 
       .form-group input:focus {
         outline: none;
-        border-color: #667eea;
-        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        border-color: #60a5fa;
+        box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.15);
       }
 
       .btn {
-        background: linear-gradient(45deg, #667eea, #764ba2);
+        background: linear-gradient(45deg, #2563eb, #1d4ed8);
         color: white;
         border: none;
         padding: 12px 30px;
@@ -120,8 +125,8 @@
       }
 
       .user-card {
-        background: #f8f9fa;
-        border: 1px solid #dee2e6;
+        background: #111827;
+        border: 1px solid #374151;
         border-radius: 10px;
         padding: 20px;
         margin-bottom: 15px;
@@ -133,21 +138,21 @@
 
       .user-card:hover {
         transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
       }
 
       .user-info h3 {
-        color: #333;
+        color: #f9fafb;
         margin-bottom: 5px;
       }
 
       .user-info p {
-        color: #666;
+        color: #9ca3af;
         font-size: 14px;
       }
 
       .delete-btn {
-        background: #dc3545;
+        background: #b91c1c;
         color: white;
         border: none;
         padding: 8px 16px;
@@ -157,22 +162,22 @@
       }
 
       .delete-btn:hover {
-        background: #c82333;
+        background: #991b1b;
       }
 
       .loading {
         text-align: center;
         padding: 20px;
-        color: #666;
+        color: #9ca3af;
       }
 
       .error {
-        background: #f8d7da;
-        color: #721c24;
+        background: #450a0a;
+        color: #fecaca;
         padding: 15px;
         border-radius: 5px;
         margin: 20px;
-        border: 1px solid #f5c6cb;
+        border: 1px solid #7f1d1d;
       }
 
       @keyframes fadeIn {
