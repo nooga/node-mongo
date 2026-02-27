@@ -3,6 +3,8 @@ LOAD node-mongo.yaml
 
 ENTRY node-mongo/stack
 
+SECRET default-mongodb-token default-mongodb-org
+
 # backend image is built from repo root (Dockerfile at repo root)
 IMAGE backend:latest node-mongo/backend . Dockerfile
 

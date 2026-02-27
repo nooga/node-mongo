@@ -1,5 +1,69 @@
 namespace: node-mongo
 
+atlas-project:
+  defines: mongodb-atlas/project
+  name: monk-node-mongo-dev-project
+  organization: <- secret("default-mongodb-org")
+  secret_ref: default-mongodb-token
+  services:
+    data:
+      protocol: custom
+  permitted-secrets:
+    default-mongodb-token: true
+    default-mongodb-org: true
+
+atlas-user:
+  defines: mongodb-atlas/user
+  name: monk-node-mongo-atlas-user
+  # NOTE: mongodb-atlas/user currently applies the role on the "admin" database.
+  # Using readWriteAnyDatabase (an admin DB role) grants read/write on all databases,
+  # including the application DB used by this stack ("test").
+  role: readWriteAnyDatabase
+  project_id: <- connection-target("project") entity-state get-member("id")
+  secret_ref: default-mongodb-token
+  password_secret_ref: atlas-mongodb-password
+  services:
+    data:
+      protocol: custom
+  connections:
+    project:
+      target: node-mongo/atlas-project
+      service: data
+  depends:
+    wait-for:
+      runnables:
+        - node-mongo/atlas-project
+      timeout: 300
+  permitted-secrets:
+    default-mongodb-token: true
+    atlas-mongodb-password: true
+
+atlas-cluster:
+  defines: mongodb-atlas/cluster
+  name: monk-node-mongo-atlas-cluster
+  provider: AWS
+  region: US_EAST_1
+  instance_size: M0
+  # Demo-friendly; for production, restrict to trusted IPs/CIDRs.
+  allow_ips:
+    - "0.0.0.0/0"
+  project_id: <- connection-target("project") entity-state get-member("id")
+  secret_ref: default-mongodb-token
+  services:
+    data:
+      protocol: custom
+  connections:
+    project:
+      target: node-mongo/atlas-project
+      service: data
+  depends:
+    wait-for:
+      runnables:
+        - node-mongo/atlas-project
+      timeout: 600
+  permitted-secrets:
+    default-mongodb-token: true
+
 backend:
   defines: runnable
   metadata:
@@ -17,15 +81,6 @@ backend:
       ingress-routes:
         api:
           path-prefix: /
-  connections:
-    mongodb:
-      target: node-mongo/mongodb
-      service: mongodb
-  depends:
-    wait-for:
-      runnables:
-        - node-mongo/mongodb
-      timeout: 300
   variables:
     port:
       type: int
@@ -40,71 +95,48 @@ backend:
     mongodb-uri:
       type: string
       env: MONGODB_URI
-      description: MongoDB connection URI.
-      # server.js expects a standard URI; credentials are provided separately via env vars
-      value: <- `mongodb://${mongodb-host}:${mongodb-port}/${mongodb-database}?authSource=admin`
-    mongodb-username:
+      # The Atlas SRV string typically does not include a database name.
+      # If no DB is provided, MongoDB drivers default to "test" (which this app uses),
+      # but we make it explicit to avoid ambiguity.
+      value: <- `${mongodb-srv}/${mongodb-db-name}`
+    mongodb-srv:
       type: string
+      description: MongoDB Atlas SRV connection string (without database name).
+      value: <- connection-target("mongodb") entity-state get-member("connection_srv")
+    mongodb-db-name:
+      type: string
+      description: Database name to use within the MongoDB connection string.
+      value: test
+    mongodb-user:
+      type: string
+      description: MongoDB Atlas database user (from provisioned Atlas user entity).
       env: MONGODB_USERNAME
-      description: Username for MongoDB authentication.
-      value: <- $global-mongo-init-username default("marcin")
+      value: <- connection-target("mongodb-user") entity-state get-member("name")
     mongodb-password:
       type: string
+      value: <- secret("atlas-mongodb-password")
       env: MONGODB_PASSWORD
-      description: Password for MongoDB authentication.
-      value: <- $global-mongo-init-password
-    mongodb-host:
-      type: string
-      env: MONGODB_HOST
-      description: Host for MongoDB connection.
-      value: <- connection-hostname("mongodb")
-    mongodb-port:
-      type: int
-      env: MONGODB_PORT
-      description: Port for MongoDB connection.
-      value: <- connection-port("mongodb")
-    mongodb-database:
-      type: string
-      env: MONGODB_DATABASE
-      description: Database name for MongoDB connection.
-      value: <- $global-mongo-init-database default("nodeapp")
-
-mongodb:
-  defines: runnable
-  inherits: mongodb/mongodb
-  variables:
-    mongo-init-password:
-      type: string
-      env: MONGO_INITDB_ROOT_PASSWORD
-      description: Root password for MongoDB initialization.
-      value: <- $global-mongo-init-password
-    mongo-init-username:
-      type: string
-      env: MONGO_INITDB_ROOT_USERNAME
-      description: Root username for MongoDB initialization.
-      value: <- $global-mongo-init-username default("mongo")
-    mongo-init-database:
-      type: string
-      env: MONGO_INITDB_DATABASE
-      description: Default database to initialize in MongoDB.
-      value: <- $global-mongo-init-database default("mongo")
+  permitted-secrets:
+    atlas-mongodb-password: true
+  connections:
+    mongodb:
+      target: node-mongo/atlas-cluster
+      service: data
+    mongodb-user:
+      target: node-mongo/atlas-user
+      service: data
+  depends:
+    wait-for:
+      runnables:
+        - node-mongo/atlas-cluster
+        - node-mongo/atlas-user
+      timeout: 900
 
 stack:
   defines: group
-  variables:
-    global-mongo-init-username:
-      type: string
-      description: Username for MongoDB authentication.
-      value: mongo
-    global-mongo-init-database:
-      type: string
-      description: Database name for MongoDB connection.
-      value: mongo
-    global-mongo-init-password:
-      type: string
-      description: Password for MongoDB authentication.
-      value: zerozero1234
   members:
+    - node-mongo/atlas-project
+    - node-mongo/atlas-cluster
+    - node-mongo/atlas-user
     - node-mongo/backend
-    - node-mongo/mongodb
  

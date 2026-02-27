@@ -1,0 +1,7 @@
+{
+  "mcpServers": {
+    "monk": {
+      "url": "http://localhost:7313/sse"
+    }
+  }
+}
